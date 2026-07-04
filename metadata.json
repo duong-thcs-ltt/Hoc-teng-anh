@@ -1,0 +1,6 @@
+{
+  "name": "English Translation and TTS Learning Companion",
+  "description": "A full-stack English-Vietnamese translator and English pronunciation learning application with high-quality TTS and Gemini AI-powered analysis.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
