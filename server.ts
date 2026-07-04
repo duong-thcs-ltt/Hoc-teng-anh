@@ -2,9 +2,6 @@ import express from "express";
 import path from "path";
 import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
-import { createRequire } from "module";
-
-const require = createRequire(import.meta.url);
 
 // Load environment variables
 dotenv.config();
@@ -51,22 +48,34 @@ app.post("/api/extract-text", async (req, res) => {
       return res.status(400).json({ error: "Missing file data" });
     }
 
-    const buffer = Buffer.from(fileBase64, "base64");
     let text = "";
 
     if (fileName.endsWith(".pdf") || fileType === "application/pdf") {
-      const pdfParse = require("pdf-parse");
-      const pdfData = await pdfParse(buffer);
-      text = pdfData.text;
+      // Use Gemini Multimodal API to extract text from PDF cleanly with zero server dependencies
+      const response = await getAI().models.generateContent({
+        model: "gemini-3.5-flash",
+        contents: [
+          {
+            inlineData: {
+              mimeType: "application/pdf",
+              data: fileBase64,
+            },
+          },
+          "Extract and return all the text from this PDF document. Keep the exact content of the document, do not add any extra text or summary. Return only the extracted text of the PDF.",
+        ],
+      });
+      text = response.text || "";
     } else if (
       fileName.endsWith(".docx") ||
       fileType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     ) {
       const mammoth = await import("mammoth");
+      const buffer = Buffer.from(fileBase64, "base64");
       const docxData = await mammoth.default.extractRawText({ buffer });
       text = docxData.value;
     } else {
       // Fallback for txt or other raw text files
+      const buffer = Buffer.from(fileBase64, "base64");
       text = buffer.toString("utf-8");
     }
 
