@@ -1,13 +1,10 @@
 import express from "express";
 import path from "path";
-import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
 import { createRequire } from "module";
-import mammoth from "mammoth";
 
 const require = createRequire(import.meta.url);
-const pdfParse = require("pdf-parse");
 
 // Load environment variables
 dotenv.config();
@@ -58,13 +55,15 @@ app.post("/api/extract-text", async (req, res) => {
     let text = "";
 
     if (fileName.endsWith(".pdf") || fileType === "application/pdf") {
+      const pdfParse = require("pdf-parse");
       const pdfData = await pdfParse(buffer);
       text = pdfData.text;
     } else if (
       fileName.endsWith(".docx") ||
       fileType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     ) {
-      const docxData = await mammoth.extractRawText({ buffer });
+      const mammoth = await import("mammoth");
+      const docxData = await mammoth.default.extractRawText({ buffer });
       text = docxData.value;
     } else {
       // Fallback for txt or other raw text files
@@ -209,6 +208,7 @@ app.post("/api/tts", async (req, res) => {
 async function startServer() {
   if (process.env.NODE_ENV !== "production") {
     console.log("Starting server in DEVELOPMENT mode with Vite Middleware...");
+    const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
